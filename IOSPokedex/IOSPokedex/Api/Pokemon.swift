@@ -1,13 +1,10 @@
-//
-//  Pokemon.swift
-//  IOSPokedex
-//
-//  Created by user275803 on 6/4/25.
-//
+// Pagination-enabled API and ViewModel
 
 import Foundation
 
-struct Pokemon : Codable{
+// MARK: - Models
+
+struct PokemonResults: Codable {
     var results: [PokemonEntry]
 }
 
@@ -37,39 +34,47 @@ struct TypeDetail: Codable {
     let url: String
 }
 
-class PokeApi {
-    func getData(completion: @escaping ([PokemonEntry]) -> ()) {
-        guard let url = URL(string: "https://pokeapi.co/api/v2/pokemon?limit=151") else {
-            return
-        }
-        URLSession.shared.dataTask(with: url) {(data, response, error) in
-            guard let data = data else {
-                return
-            }
-            let pokemonList = try! JSONDecoder().decode(Pokemon.self, from: data)
-            DispatchQueue.main.async {
-                completion(pokemonList.results)
+// MARK: - API Service
+
+class Pokemon {
+    /// Fetch list of Pokémon with pagination
+    func getData(offset: Int, limit: Int, completion: @escaping ([PokemonEntry]) -> ()) {
+        let urlString = "https://pokeapi.co/api/v2/pokemon?offset=\(offset)&limit=\(limit)"
+        guard let url = URL(string: urlString) else { return }
+
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            guard let data = data else { return }
+            do {
+                let decoded = try JSONDecoder().decode(PokemonResults.self, from: data)
+                DispatchQueue.main.async {
+                    completion(decoded.results)
+                }
+            } catch {
+                print("Decoding error: \(error)")
             }
         }.resume()
     }
-    
+
+    /// Fetch details for a single Pokémon
     func getPokemonDetails(from url: String, completion: @escaping (PokemonDetails?) -> ()) {
-        guard let detailURL = URL(string: url) else {
-            return
-        }
-        URLSession.shared.dataTask(with: detailURL) { data, response, error in
+        guard let detailURL = URL(string: url) else { return }
+        URLSession.shared.dataTask(with: detailURL) { data, _, _ in
             guard let data = data else {
                 completion(nil)
                 return
             }
-            do { let detail = try JSONDecoder().decode(PokemonDetails.self, from: data)
+            do {
+                let detail = try JSONDecoder().decode(PokemonDetails.self, from: data)
                 DispatchQueue.main.async {
                     completion(detail)
                 }
             } catch {
-                print("Erro ao decodificar detalhes: \(error)")
+                print("Detail decoding error: \(error)")
                 completion(nil)
             }
         }.resume()
     }
 }
+
+// MARK: - ViewModel
+

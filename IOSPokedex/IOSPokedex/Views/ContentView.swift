@@ -12,13 +12,14 @@ struct ContentView: View {
     @State private var sprites: [String: String] = [:]
     @State var searchText = ""
 
-    let api = PokeApi()
+    let api = Pokemon()
     var body: some View {
         NavigationView {
             List {
                 
             }.onAppear {
-                PokeApi().getData() { pokemon in
+                Pokemon().getData(offset: 0, limit: 151) { pokemon in
+
                     self.pokemon = pokemon
                     for pokemon in pokemon {
                         print(pokemon.name)
