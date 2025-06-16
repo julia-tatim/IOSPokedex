@@ -1,0 +1,9 @@
+//
+//  CadastroViewModel.swift
+//  IOSPokedex
+//
+//  Created by user277135 on 6/15/25.
+//
+
+
+import Foundationimport CoreDataclass CadastroViewModel: ObservableObject {    @Published var nomeDeUsuario = ""    @Published var email = ""    @Published var senha = ""    @Published var erroMensagem = ""    @Published var cadastroSucesso = false    private let context = PersistenceController.shared.container.viewContext    func cadastrar() {        // Validação simples        guard !nomeDeUsuario.isEmpty, !email.isEmpty, !senha.isEmpty else {            erroMensagem = "Preencha todos os campos"            return        }        guard email.contains("@") else {            erroMensagem = "Email inválido"            return        }        guard senha.count >= 6 else {            erroMensagem = "Senha deve ter pelo menos 6 caracteres"            return        }        // Verifica se já existe usuário com mesmo email        let request: NSFetchRequest<Usuario> = Usuario.fetchRequest()        request.predicate = NSPredicate(format: "email == %@", email)                do {            let usuariosExistentes = try context.fetch(request)            if !usuariosExistentes.isEmpty {                erroMensagem = "Email já cadastrado"                return            }            // Cria novo usuário            let novoUsuario = Usuario(context: context)            novoUsuario.id = UUID()            novoUsuario.nomeDeUsuario = nomeDeUsuario            novoUsuario.email = email            novoUsuario.senha = senha            try context.save()            cadastroSucesso = true            erroMensagem = ""        } catch {            erroMensagem = "Erro ao salvar usuário: \(error.localizedDescription)"        }    }}
